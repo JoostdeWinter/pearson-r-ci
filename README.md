@@ -20,7 +20,7 @@ Example: `r = 0.42`, `N = 80`, `95%` → CI ≈ **[0.2232, 0.5875]**.
 De Winter, J. C. F. (2025). Pearson r — confidence intervals [Web application]. https://joostdewinter.github.io/pearson-r-ci/
 
 ## Contact
-Joost de Wintere, j.c.f.dewinter@tudelft.nl
+Joost de Winter, j.c.f.dewinter@tudelft.nl
 
 ## References
 Hotelling, H. (1953). New light on the correlation coefficient and its transforms. Journal of the Royal Statistical Society. Series B (Methodological), 15(2), 193-232.
