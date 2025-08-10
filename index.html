@@ -117,6 +117,8 @@
   <script>
     const $ = (id) => document.getElementById(id);
     const rEl = $("r"), nEl = $("n"), levelEl = $("level");
+    rEl.value = "0.42"; // ensure dot on initial load (overrides restored values)
+
     rEl.addEventListener("blur", () => {
   const v = parseLocaleFloat(rEl.value);
   if (Number.isFinite(v)) rEl.value = String(v); // ensures 0.42 is shown
@@ -331,6 +333,7 @@ function parseLocaleFloat(s) {
   </script>
 </body>
 </html>
+
 
 
 
