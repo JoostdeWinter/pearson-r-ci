@@ -127,7 +127,15 @@ input[type="number"]:focus, input[type="text"]:focus {
   <script>
     const $ = (id) => document.getElementById(id);
     const rEl = $("r"), nEl = $("n"), levelEl = $("level");
-    rEl.value = "0.42"; // ensure dot on initial load (overrides restored values)
+const DEFAULT_R = "0.42";
+function forceDefaultR() {
+  // Set both property and attribute (covers autofill/session-restore cases)
+  rEl.value = DEFAULT_R;
+  rEl.setAttribute("value", DEFAULT_R);
+}
+document.addEventListener("DOMContentLoaded", forceDefaultR);
+window.addEventListener("pageshow", forceDefaultR);
+setTimeout(forceDefaultR, 0); // run once more after paint
 
     rEl.addEventListener("blur", () => {
   const v = parseLocaleFloat(rEl.value);
@@ -343,6 +351,7 @@ function parseLocaleFloat(s) {
   </script>
 </body>
 </html>
+
 
 
 
