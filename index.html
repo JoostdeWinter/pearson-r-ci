@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pearson r — Confidence Intervals</title>
+  <style>
+    :root { --bg:#fff; --ink:#0b0b0b; --muted:#4a4a4a; --panel:#f6f6f7; --border:#d9d9de; --accent:#0a67a3; }
+    * { box-sizing: border-box; } html, body { height: 100%; }
+    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial; color:var(--ink); background:var(--bg); line-height:1.45; }
+    .app { max-width: 920px; margin: 32px auto; padding: 0 16px; }
+    header { border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:20px; }
+    header h1 { margin:0; font-size:22px; font-weight:700; }
+    header p { margin:6px 0 0; color:var(--muted); font-size:14px; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; }
+    label { display:block; font-size:13px; color:var(--muted); margin:0 0 8px; }
+    input[type="number"] { width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:#fff; color:var(--ink); }
+    input[type="number"]:focus { outline:2px solid #cfe7f7; border-color:var(--accent); }
+    .controls { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+    @media (max-width:880px){ .controls { grid-template-columns:1fr 1fr; } }
+    .actions { display:flex; gap:10px; align-items:end; }
+    button { appearance:none; border:1px solid var(--border); background:#fff; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600; }
+    button.primary { border-color:var(--accent); color:#fff; background:var(--accent); }
+    .results { display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px; }
+    .stat { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+    .cell { background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; }
+    .cell h3 { margin:0 0 6px; font-size:14px; color:var(--muted); }
+    .value { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:18px; font-weight:700; }
+    .note { font-size:12px; color:var(--muted); margin-top:8px; }
+
+    /* Fisher visibly secondary (smaller/muted) */
+    .secondary .cell { background:#fbfbfc; }
+    .secondary .value { font-size:14px; font-weight:700; opacity:.85; }
+    .secondary .cell h3 { font-size:12px; }
+    .secondary .note { font-size:11px; }
+
+    /* Citation + small meta row */
+    .cite { margin-top: 6px; color: var(--muted); font-size: 12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    .badge { display:inline-block; vertical-align:middle; }
+  </style>
+
+  <script defer data-domain="JoostdeWinter.github.io" src="https://plausible.io/js/script.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Pearson r — Confidence Intervals</h1>
+      <p>
+        This tool reports a two-sided (1−α) confidence interval for a sample correlation <em>r</em>.
+        The top interval is computed by numerically inverting the sampling distribution of R
+        while fixing the population correlation at the observed value (plug-in ρ = r).
+        Concretely, it finds the equal-tailed quantiles <em>x</em> that solve
+        F<sub>R</sub>(x; N, ρ = r) = α/2 and 1−α/2 using Gauss–Legendre quadrature.
+        The smaller panel shows the familiar Fisher z large-sample approximation for comparison.
+      </p>
+      <p class="cite">
+        <span>Citation: J. C. F. de Winter. Pearson r — Confidence Intervals. </span>
+        <img class="badge" alt="views"
+             src="https://hits.sh/JoostdeWinter.github.io/pearson-r-ci.svg?label=views">
+      </p>
+    </header>
+
+    <div class="panel">
+      <div class="controls">
+        <div>
+          <label for="r">Sample correlation r (−1 &lt; r &lt; 1)</label>
+          <input id="r" type="number" step="0.0001" value="0.42" placeholder="e.g., 0.42" />
+        </div>
+        <div>
+          <label for="n">Sample size N (N &gt; 2)</label>
+          <input id="n" type="number" step="1" value="80" placeholder="e.g., 80" />
+        </div>
+        <div>
+          <label for="level">Confidence level (%)</label>
+          <input id="level" type="number" step="0.1" min="50" max="99.9" value="95" />
+        </div>
+        <div class="actions">
+          <button id="compute" class="primary">Compute</button>
+          <button id="reset">Reset</button>
+        </div>
+      </div>
+
+      <div class="results">
+        <!-- Primary: sampling distribution (plug-in ρ = r) -->
+        <div class="panel">
+          <div class="stat">
+            <div class="cell"><h3>Lower</h3><div id="plug-l" class="value">—</div></div>
+            <div class="cell"><h3>Upper</h3><div id="plug-u" class="value">—</div></div>
+            <div class="cell"><h3>Method</h3><div class="value">Sampling distribution</div></div>
+          </div>
+          <p class="note">Equal-tailed CI by solving F<sub>R</sub>(x; N, ρ=r) = α/2 and 1−α/2.</p>
+        </div>
+
+        <!-- Secondary: Fisher -->
+        <div class="panel secondary">
+          <div class="stat">
+            <div class="cell"><h3>Lower</h3><div id="fisher-l" class="value">—</div></div>
+            <div class="cell"><h3>Upper</h3><div id="fisher-u" class="value">—</div></div>
+            <div class="cell"><h3>Method</h3><div class="value">Fisher z (approx.)</div></div>
+          </div>
+          <p class="note">Large-sample approximation via Fisher’s z transform.</p>
+        </div>
+      </div>
+
+      <p id="message" class="note"></p>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const rEl = $("r"), nEl = $("n"), levelEl = $("level");
+    const plugL = $("plug-l"), plugU = $("plug-u");
+    const fisherL = $("fisher-l"), fisherU = $("fisher-u");
+    const msg = $("message");
+
+    $("reset").addEventListener("click", () => {
+      rEl.value = "0.42"; nEl.value = "80"; levelEl.value = "95";
+      plugL.textContent = plugU.textContent = "—";
+      fisherL.textContent = fisherU.textContent = "—";
+      msg.textContent = "";
+    });
+
+    $("compute").addEventListener("click", () => {
+      // Log a custom analytics event (works only if Plausible has loaded)
+      if (window.plausible) plausible("compute_clicked");
+
+      const r = Number(rEl.value), n = Number(nEl.value), level = Number(levelEl.value);
+      if (!Number.isFinite(r) || Math.abs(r) >= 1) return showError("r must be strictly between −1 and 1.");
+      if (!Number.isFinite(n) || !Number.isInteger(n) || n <= 2) return showError("N must be an integer > 2.");
+      if (!(level > 0 && level < 100)) return showError("Confidence level must be in (0, 100).");
+      const alpha = 1 - level / 100;
+
+      clearMsg();
+      try {
+        // Fisher (secondary)
+        const {lower: fl, upper: fu} = fisherCI_rho(r, n, alpha);
+        fisherL.textContent = fmt(fl); fisherU.textContent = fmt(fu);
+
+        // Primary: plug-in (ρ = r), quantiles in x
+        const cdf = makePearsonCDF(n, r); // caches constants for this (N, rho)
+        const lower = invertR(cdf, alpha / 2, -1 + 1e-12, r - 1e-12);
+        const upper = invertR(cdf, 1 - alpha / 2, r + 1e-12, 1 - 1e-12);
+        plugL.textContent = fmt(lower); plugU.textContent = fmt(upper);
+
+        msg.textContent = `Input: r = ${fmt(r)}, N = ${n}, level = ${level.toFixed(1)}%`;
+      } catch (e) {
+        showError(e.message || String(e));
+      }
+    });
+
+    function showError(t){
+      plugL.textContent = plugU.textContent = "—";
+      fisherL.textContent = fisherU.textContent = "—";
+      msg.innerHTML = '<span class="error">' + escapeHTML(t) + '</span>';
+    }
+    function clearMsg(){ msg.textContent = ""; }
+    function fmt(x){ if (!Number.isFinite(x)) return "—"; const ax = Math.abs(x); return ax < 1e-4 ? x.toExponential(2) : x.toFixed(4); }
+    function escapeHTML(s){ return String(s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    // ===== Fisher z (secondary)
+    function fisherCI_rho(r, n, alpha=0.05){
+      const z = 0.5*Math.log((1+r)/(1-r)), se = 1/Math.sqrt(n-3), zc = invNorm(1-alpha/2);
+      return { lower: Math.tanh(z - zc*se), upper: Math.tanh(z + zc*se) };
+    }
+
+    // ===== Sampling distribution (Hotelling) pieces, optimized =====
+    function makePearsonCDF(N, rho){
+      if (N <= 2 || !(Math.abs(rho) < 1)) throw new Error("Invalid N or rho.");
+
+      // Precompute constants depending only on N, rho
+      const c = N - 0.5;
+      const logC = Math.log(N - 2) + logGamma(N - 1) - 0.5*Math.log(2*Math.PI) - logGamma(N - 0.5);
+      const logT1 = ((N - 1)/2) * Math.log1p(-rho*rho);
+      const logA = logC + logT1;
+      const alphaPow = (N - 4)/2;
+      const betaPow  = (N - 1.5);
+
+      // Cached Gauss–Legendre nodes/weights (n=64) on [-1,1]
+      const GL64 = gaussLegendre(64);
+
+      function pdf(t){
+        if (t <= -1 || t >= 1) return 0;
+        let z = (1 + rho*t) / 2;
+        if (z <= 0) z = 1e-15; if (z >= 1) z = 1 - 1e-15;
+        const H = hyp2F1_half_series(c, z);
+        const lp = logA + alphaPow*Math.log1p(-t*t) - betaPow*Math.log1p(-rho*t) + Math.log(H);
+        const v = Math.exp(lp);
+        return Number.isFinite(v) ? v : 0;
+      }
+
+      function cdf(x){
+        if (x <= -1) return 0;
+        if (x >= 1)  return 1;
+        const leftLen = (x + 1), rightLen = (1 - x);
+        if (leftLen <= rightLen) {
+          const s = glIntegrate(pdf, -1, x, GL64);
+          return clamp01(s);
+        } else {
+          const s = glIntegrate(pdf, x, 1, GL64);
+          return clamp01(1 - s);
+        }
+      }
+      return cdf;
+    }
+
+    // Gauss–Legendre n-point nodes/weights on [-1,1], cached
+    const _glCache = new Map();
+    function gaussLegendre(n){
+      if (_glCache.has(n)) return _glCache.get(n);
+      const x = new Float64Array(n), w = new Float64Array(n);
+      const m = Math.floor((n + 1)/2);
+      for (let i = 0; i < m; i++){
+        const z0 = Math.cos(Math.PI * (i + 0.75) / (n + 0.5));
+        let z = z0, z1;
+        for (let it = 0; it < 50; it++){
+          const {P, dP} = legendreWithDeriv(n, z);
+          z1 = z - P/dP;
+          if (Math.abs(z1 - z) < 1e-16) break;
+          z = z1;
+        }
+        const {P, dP} = legendreWithDeriv(n, z1 ?? z);
+        const xi = z1 ?? z;
+        const wi = 2/((1 - xi*xi) * dP*dP);
+        x[i] = -xi; w[i] = wi;
+        x[n - 1 - i] = xi; w[n - 1 - i] = wi;
+      }
+      const out = {x, w}; _glCache.set(n, out); return out;
+    }
+    function legendreWithDeriv(n, x){
+      let P0 = 1, P1 = x;
+      for (let k = 2; k <= n; k++){
+        const Pk = ((2*k - 1)*x*P1 - (k - 1)*P0) / k;
+        P0 = P1; P1 = Pk;
+      }
+      const dP = n*(P0 - x*P1)/(1 - x*x);
+      return {P: P1, dP};
+    }
+    function glIntegrate(f, a, b, GL){
+      const xm = 0.5*(a + b), xl = 0.5*(b - a);
+      const {x, w} = GL; let s = 0;
+      for (let i = 0; i < x.length; i++){
+        const t = xm + xl * x[i];
+        s += w[i] * f(t);
+      }
+      return xl * s;
+    }
+    function clamp01(v){ return v <= 0 ? 0 : (v >= 1 ? 1 : v); }
+
+    // Quantile solver (bisection)
+    function invertR(cdf, p, lo, hi){
+      let a = lo, b = hi, Fa = cdf(a) - p, Fb = cdf(b) - p;
+      if (!isFinite(Fa) || !isFinite(Fb)) throw new Error("Non-finite CDF.");
+      if (Fa === 0) return a; if (Fb === 0) return b;
+      if (Fa*Fb > 0){ a = -1 + 1e-12; b = 1 - 1e-12; Fa = cdf(a)-p; Fb = cdf(b)-p; }
+      for (let k = 0; k < 80; k++){
+        const m = 0.5*(a + b), Fm = cdf(m) - p;
+        if (!Number.isFinite(Fm)) break;
+        if (Math.abs(b - a) < 1e-12 || Math.abs(Fm) < 1e-12) return m;
+        if (Fa * Fm <= 0) { b = m; Fb = Fm; } else { a = m; Fa = Fm; }
+      }
+      return 0.5*(a + b);
+    }
+
+    // Hypergeometric 2F1(1/2,1/2;c;z) — fast series
+    function hyp2F1_half_series(c, z){
+      if (z <= 0) return 1;
+      if (z >= 1) z = 1 - 1e-15;
+      let term = 1, sum = 1;
+      for (let k = 0; k < 20000; k++){
+        const kp = k + 0.5;
+        term *= (kp*kp / ((c + k) * (k + 1))) * z;
+        const next = sum + term;
+        if (!Number.isFinite(next)) return next;
+        if (Math.abs(term) < 1e-15 * Math.abs(next)) return next;
+        sum = next;
+      }
+      return sum;
+    }
+
+    // logGamma (Lanczos)
+    function logGamma(z){
+      const p = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
+      if (z < 0.5) return Math.log(Math.PI) - Math.log(Math.sin(Math.PI*z)) - logGamma(1 - z);
+      z -= 1; let x = p[0]; for (let i = 1; i < p.length; i++) x += p[i] / (z + i);
+      const t = z + 7.5; return 0.5*Math.log(2*Math.PI) + (z + 0.5)*Math.log(t) - t + Math.log(x);
+    }
+
+    // Inverse Normal CDF (Acklam)
+    function invNorm(p){
+      if (!(p > 0 && p < 1)) { if (p === 0) return -Infinity; if (p === 1) return Infinity; throw new Error("p∈(0,1)"); }
+      const a=[-39.69683028665376,220.9460984245205,-275.9285104469687,138.3577518672690,-30.66479806614716,2.506628277459239],
+            b=[-54.47609879822406,161.5858368580409,-155.6989798598866,66.80131188771972,-13.28068155288572],
+            c=[-7.784894002430293e-03,-0.3223964580411365,-2.400758277161838,-2.549732539343734,4.374664141464968,2.938163982698783],
+            d=[7.784695709041462e-03,0.3224671290700398,2.445134137142996,3.754408661907416];
+      const pl=0.02425, ph=1-pl; let q,r;
+      if (p < pl){ q=Math.sqrt(-2*Math.log(p)); return (((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+      if (p > ph){ q=Math.sqrt(-2*Math.log(1-p)); return -(((((c[0]*q+c[1])*q+c[2])*q+c[3])*q+c[4])*q+c[5]) / ((((d[0]*q+d[1])*q+d[2])*q+d[3])*q+1); }
+      q=p-0.5; r=q*q;
+      return (((((a[0]*r+a[1])*r+a[2])*r+a[3])*r+a[4])*r+a[5])*q / (((((b[0]*r+b[1])*r+b[2])*r+b[3])*r+b[4])*r+1);
+    }
+
+    if (!Math.log1p) Math.log1p = (x) => Math.log(1 + x);
+  </script>
+</body>
+</html>
