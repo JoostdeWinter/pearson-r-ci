@@ -1,7 +1,6 @@
 # Pearson r — Confidence Intervals
 
 [**Live tool**](https://joostdewinter.github.io/pearson-r-ci/)  
-![views](https://hits.sh/joostdewinter.github.io/pearson-r-ci.svg?label=views)
 
 Interactive tool to compute two-sided confidence intervals for Pearson’s *r*.
 
