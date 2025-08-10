@@ -17,7 +17,7 @@ Example: `r = 0.42`, `N = 80`, `95%` → CI ≈ **[0.2232, 0.5875]**.
 - No cookies, no server; runs entirely client-side.
 
 ## How to cite this tool
-J. C. F. de Winter.Pearson r — Confidence Intervals (web tool). URL: https://joostdewinter.github.io/pearson-r-ci/
+De Winter, J. C. F. (2025). Pearson r — confidence intervals [Web application]. https://joostdewinter.github.io/pearson-r-ci/
 
 ## References
 Hotelling, H. (1953). New light on the correlation coefficient and its transforms. Journal of the Royal Statistical Society. Series B (Methodological), 15(2), 193-232.
