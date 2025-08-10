@@ -6,37 +6,83 @@
   <title>Pearson r — Confidence Intervals</title>
   <style>
     :root { --bg:#fff; --ink:#0b0b0b; --muted:#4a4a4a; --panel:#f6f6f7; --border:#d9d9de; --accent:#0a67a3; }
-    * { box-sizing: border-box; } html, body { height: 100%; }
-    body { margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial; color:var(--ink); background:var(--bg); line-height:1.45; }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.45;
+    }
     .app { max-width: 920px; margin: 32px auto; padding: 0 16px; }
+
     header { border-bottom:1px solid var(--border); padding-bottom:12px; margin-bottom:20px; }
     header h1 { margin:0; font-size:22px; font-weight:700; }
     header p { margin:6px 0 0; color:var(--muted); font-size:14px; }
-    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; }
-    label { display:block; font-size:13px; color:var(--muted); margin:0 0 8px; }
-   input[type="number"], input[type="text"] {
-  width: 100%;
-  padding: 10px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--ink);
-}
-input[type="number"]:focus, input[type="text"]:focus {
-  outline: 2px solid #cfe7f7; border-color: var(--accent);
-}
 
-    .controls { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
-    @media (max-width:880px){ .controls { grid-template-columns:1fr 1fr; } }
-    .actions { display:flex; gap:10px; align-items:end; }
-    button { appearance:none; border:1px solid var(--border); background:#fff; padding:10px 14px; border-radius:8px; cursor:pointer; font-weight:600; }
-    button.primary { border-color:var(--accent); color:#fff; background:var(--accent); }
-    .results { display:grid; grid-template-columns:1fr; gap:16px; margin-top:16px; }
-    .stat { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
-    .cell { background:#fff; border:1px solid var(--border); border-radius:8px; padding:12px; }
-    .cell h3 { margin:0 0 6px; font-size:14px; color:var(--muted); }
-    .value { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:18px; font-weight:700; }
-    .note { font-size:12px; color:var(--muted); margin-top:8px; }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:16px; }
+
+    label { display:block; font-size:13px; color:var(--muted); margin:0 0 8px; }
+
+    /* Controls: 3 equal inputs + actions column; bottoms aligned */
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+      gap: 16px;
+      align-items: end;
+    }
+    @media (max-width: 880px) {
+      .controls { grid-template-columns: 1fr; }
+      .actions { justify-content: flex-start; }
+    }
+
+    /* Make ALL inputs identical */
+    .controls input {
+      width: 100%;
+      height: 44px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--ink);
+      font-size: 16px; /* avoids iOS zoom; consistent metrics */
+      line-height: 1.2;
+    }
+    .controls input:focus { outline: 2px solid #cfe7f7; border-color: var(--accent); }
+
+    /* Remove number spinners so number/text look identical */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      align-self: end;
+    }
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #fff;
+      height: 44px;                 /* match input height */
+      padding: 0 16px;              /* vertical centered text */
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    button.primary { border-color: var(--accent); color: #fff; background: var(--accent); }
+
+    .results { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 16px; }
+    .stat { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .cell { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+    .cell h3 { margin: 0 0 6px; font-size: 14px; color: var(--muted); }
+    .value { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 18px; font-weight: 700; }
+    .note { font-size: 12px; color: var(--muted); margin-top: 8px; }
 
     /* Fisher visibly secondary (smaller/muted) */
     .secondary .cell { background:#fbfbfc; }
@@ -44,11 +90,12 @@ input[type="number"]:focus, input[type="text"]:focus {
     .secondary .cell h3 { font-size:12px; }
     .secondary .note { font-size:11px; }
 
-    /* Citation + small meta row */
+    /* Citation + meta row */
     .cite { margin-top: 6px; color: var(--muted); font-size: 12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
     .badge { display:inline-block; vertical-align:middle; }
   </style>
 
+  <!-- (Optional) analytics; safe to remove if you don't use it -->
   <script defer data-domain="joostdewinter.github.io" src="https://plausible.io/js/script.js"></script>
 </head>
 <body>
@@ -64,9 +111,8 @@ input[type="number"]:focus, input[type="text"]:focus {
         The smaller panel shows the familiar Fisher z large-sample approximation for comparison.
       </p>
       <p class="cite">
-        <span>Citation: De Winter, J. C. F. (2025). Pearson r — confidence intervals [Web application]. https://joostdewinter.github.io/pearson-r-ci/ </span>
-        <img class="badge" alt="views"
-             src="https://hits.sh/joostdewinter.github.io/pearson-r-ci.svg?label=views">
+        <span>Citation: De Winter, J. C. F. (2025). Pearson r — confidence intervals [Web application]. https://joostdewinter.github.io/pearson-r-ci/</span>
+        <img class="badge" alt="views" src="https://hits.sh/joostdewinter.github.io/pearson-r-ci.svg?label=views">
       </p>
     </header>
 
@@ -74,24 +120,27 @@ input[type="number"]:focus, input[type="text"]:focus {
       <div class="controls">
         <div>
           <label for="r">Sample correlation r (−1 &lt; r &lt; 1)</label>
-<input id="r"
-       name="r_dot"
-       lang="en"
-       type="text"
-       inputmode="decimal"
-       autocomplete="off"
-       pattern="[+-]?[0-9]*[.,]?[0-9]+"
-       value="0.42"
-       placeholder="e.g., 0.42" />
+          <input id="r"
+                 name="r_input_v2"
+                 lang="en"
+                 type="text"
+                 inputmode="decimal"
+                 autocomplete="off"
+                 pattern="[+-]?[0-9]*[.,]?[0-9]+"
+                 value="0.42"
+                 placeholder="e.g., 0.42" />
         </div>
+
         <div>
           <label for="n">Sample size N (N &gt; 2)</label>
           <input id="n" type="number" step="1" value="80" placeholder="e.g., 80" />
         </div>
+
         <div>
           <label for="level">Confidence level (%)</label>
           <input id="level" type="number" step="0.1" min="50" max="99.9" value="95" />
         </div>
+
         <div class="actions">
           <button id="compute" class="primary">Compute</button>
           <button id="reset">Reset</button>
@@ -126,54 +175,65 @@ input[type="number"]:focus, input[type="text"]:focus {
 
   <script>
     const $ = (id) => document.getElementById(id);
+
     const rEl = $("r"), nEl = $("n"), levelEl = $("level");
-const DEFAULT_R = "0.42";
-function forceDefaultR() {
-  // Set both property and attribute (covers autofill/session-restore cases)
-  rEl.value = DEFAULT_R;
-  rEl.setAttribute("value", DEFAULT_R);
-}
-document.addEventListener("DOMContentLoaded", forceDefaultR);
-window.addEventListener("pageshow", forceDefaultR);
-setTimeout(forceDefaultR, 0); // run once more after paint
-
-    rEl.addEventListener("blur", () => {
-  const v = parseLocaleFloat(rEl.value);
-  if (Number.isFinite(v)) rEl.value = String(v); // ensures 0.42 is shown
-});
-
     const plugL = $("plug-l"), plugU = $("plug-u");
     const fisherL = $("fisher-l"), fisherU = $("fisher-u");
     const msg = $("message");
 
+    // Force default 0.42 with a dot (prevents locale restore)
+    const DEFAULT_R = "0.42";
+    function forceDefaultR() {
+      rEl.value = DEFAULT_R;
+      rEl.setAttribute("value", DEFAULT_R);
+    }
+    document.addEventListener("DOMContentLoaded", forceDefaultR);
+    window.addEventListener("pageshow", forceDefaultR);
+    setTimeout(forceDefaultR, 0);
+
+    // Normalize to dot after editing
+    rEl.addEventListener("blur", () => {
+      const v = parseLocaleFloat(rEl.value);
+      if (Number.isFinite(v)) rEl.value = String(v);
+    });
+
+    // Reset
     $("reset").addEventListener("click", () => {
-      rEl.value = "0.42"; nEl.value = "80"; levelEl.value = "95";
+      rEl.value = "0.42";
+      nEl.value = "80";
+      levelEl.value = "95";
       plugL.textContent = plugU.textContent = "—";
       fisherL.textContent = fisherU.textContent = "—";
       msg.textContent = "";
     });
 
+    // Compute
     $("compute").addEventListener("click", () => {
-      // Log a custom analytics event (works only if Plausible has loaded)
-      if (window.plausible) plausible("compute_clicked");
+      if (window.plausible) plausible("compute_clicked"); // optional analytics
 
-      const r = parseLocaleFloat(rEl.value), n = Number(nEl.value), level = Number(levelEl.value);
+      const r = parseLocaleFloat(rEl.value);
+      const n = Number(nEl.value);
+      const level = Number(levelEl.value);
+
       if (!Number.isFinite(r) || Math.abs(r) >= 1) return showError("r must be strictly between −1 and 1.");
       if (!Number.isFinite(n) || !Number.isInteger(n) || n <= 2) return showError("N must be an integer > 2.");
       if (!(level > 0 && level < 100)) return showError("Confidence level must be in (0, 100).");
+
       const alpha = 1 - level / 100;
 
       clearMsg();
       try {
         // Fisher (secondary)
         const {lower: fl, upper: fu} = fisherCI_rho(r, n, alpha);
-        fisherL.textContent = fmt(fl); fisherU.textContent = fmt(fu);
+        fisherL.textContent = fmt(fl);
+        fisherU.textContent = fmt(fu);
 
         // Primary: plug-in (ρ = r), quantiles in x
-        const cdf = makePearsonCDF(n, r); // caches constants for this (N, rho)
+        const cdf = makePearsonCDF(n, r);
         const lower = invertR(cdf, alpha / 2, -1 + 1e-12, r - 1e-12);
         const upper = invertR(cdf, 1 - alpha / 2, r + 1e-12, 1 - 1e-12);
-        plugL.textContent = fmt(lower); plugU.textContent = fmt(upper);
+        plugL.textContent = fmt(lower);
+        plugU.textContent = fmt(upper);
 
         msg.textContent = `Input: r = ${fmt(r)}, N = ${n}, level = ${level.toFixed(1)}%`;
       } catch (e) {
@@ -189,21 +249,23 @@ setTimeout(forceDefaultR, 0); // run once more after paint
     function clearMsg(){ msg.textContent = ""; }
     function fmt(x){ if (!Number.isFinite(x)) return "—"; const ax = Math.abs(x); return ax < 1e-4 ? x.toExponential(2) : x.toFixed(4); }
     function escapeHTML(s){ return String(s).replace(/[&<>\"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function parseLocaleFloat(s) {
-  s = String(s ?? "").trim();
-  if (!s) return NaN;
-  const lastDot = s.lastIndexOf(".");
-  const lastComma = s.lastIndexOf(",");
-  if (lastDot !== -1 || lastComma !== -1) {
-    const decIsComma = lastComma > lastDot;
-    const dec = decIsComma ? "," : ".";
-    const thousands = decIsComma ? "." : ",";
-    s = s.replace(new RegExp("\\" + thousands, "g"), "");
-    s = s.replace(dec, ".");
-  }
-  s = s.replace(/\s+/g, "");
-  return Number(s);
-}
+
+    // Accept dot or comma, normalize to dot
+    function parseLocaleFloat(s) {
+      s = String(s ?? "").trim();
+      if (!s) return NaN;
+      const lastDot = s.lastIndexOf(".");
+      const lastComma = s.lastIndexOf(",");
+      if (lastDot !== -1 || lastComma !== -1) {
+        const decIsComma = lastComma > lastDot;
+        const dec = decIsComma ? "," : ".";
+        const thousands = decIsComma ? "." : ",";
+        s = s.replace(new RegExp("\\" + thousands, "g"), "");
+        s = s.replace(dec, ".");
+      }
+      s = s.replace(/\s+/g, "");
+      return Number(s);
+    }
 
     // ===== Fisher z (secondary)
     function fisherCI_rho(r, n, alpha=0.05){
@@ -351,10 +413,3 @@ function parseLocaleFloat(s) {
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
