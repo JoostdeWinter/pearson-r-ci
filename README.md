@@ -22,6 +22,6 @@ De Winter, J. C. F. (2025). Pearson r — confidence intervals [Web application]
 Joost de Winter, j.c.f.dewinter@tudelft.nl
 
 ## References
-Hotelling, H. (1953). New light on the correlation coefficient and its transforms. Journal of the Royal Statistical Society. Series B (Methodological), 15(2), 193-232.
+Hotelling, H. (1953). New light on the correlation coefficient and its transforms. _Journal of the Royal Statistical Society. Series B (Methodological), 15_, 193-232.
 
-De Winter, J. C. F., Gosling, S. D., & Potter, J. (2016). Comparing the Pearson and Spearman correlation coefficients across distributions and sample sizes: A tutorial using simulations and empirical data. Psychological Methods, 21, 273–290. https://doi.org/10.1037/met0000079
+De Winter, J. C. F., Gosling, S. D., & Potter, J. (2016). Comparing the Pearson and Spearman correlation coefficients across distributions and sample sizes: A tutorial using simulations and empirical data. _Psychological Methods, 21_, 273–290. https://doi.org/10.1037/met0000079
